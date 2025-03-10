@@ -1,7 +1,7 @@
 *.js
 !jest.config.js
-node_modules
-response.json
+*.node_modules
+*.response.json
 
 # CDK asset staging directory
 .cdk.staging
@@ -9,3 +9,5 @@ cdk.out
 
 # Misc
 .DS_Store
+*.schema.json
+*.log
