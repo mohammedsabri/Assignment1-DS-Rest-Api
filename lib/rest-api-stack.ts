@@ -77,7 +77,6 @@ export class RestAPIStack extends cdk.Stack {
         
 
             // Permissions
-    ..... as before ....
     // REST API 
     const api = new apig.RestApi(this, "RestAPI", {
       description: "demo api",
