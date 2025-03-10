@@ -3,16 +3,15 @@ import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
-
-const ddbDocClient = createDDbDocClient();
+import { DynamoDBDocumentClient, GetCommand, QueryCommand, QueryCommandInput } from "@aws-sdk/lib-dynamodb";
+const ddbDocClient = createDocumentClient();
 
 export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {     // Note change
   try {
     console.log("[EVENT]", JSON.stringify(event));
     const pathParameters  = event?.pathParameters;
     const movieId = pathParameters?.movieId ? parseInt(pathParameters.movieId) : undefined;
-
+    const hasCast = event.queryStringParameters?.cast === "true";
     if (!movieId) {
       return {
         statusCode: 404,
@@ -39,9 +38,29 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {    
         body: JSON.stringify({ Message: "Invalid movie Id" }),
       };
     }
-    const body = {
+    let body = {
       data: commandOutput.Item,
     };
+
+    let commandInput: QueryCommandInput = {
+      TableName: process.env.MOVIE_CAST_TABLE,
+    };
+    
+    if (hasCast) {
+      commandInput = {
+        ...commandInput,
+        KeyConditionExpression: "movieId = :movieId",
+        ExpressionAttributeValues: {
+          ":movieId": movieId,
+        },
+      };
+
+      const castCommandOutput = await ddbDocClient.send(
+        new QueryCommand(commandInput)
+      );
+        
+      body.data.cast = castCommandOutput.Items;
+    }
 
     // Return Response
     return {
@@ -63,8 +82,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {    
   }
 };
 
-function createDDbDocClient() {
-  const ddbClient = new DynamoDBClient({ region: process.env.REGION });
+function createDocumentClient() { 
+   const ddbClient = new DynamoDBClient({ region: process.env.REGION });
   const marshallOptions = {
     convertEmptyValues: true,
     removeUndefinedValues: true,

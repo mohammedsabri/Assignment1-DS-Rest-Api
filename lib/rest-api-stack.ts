@@ -35,6 +35,7 @@ export class RestAPIStack extends cdk.Stack {
         memorySize: 128,
         environment: {
           TABLE_NAME: moviesTable.tableName,
+          MOVIE_CAST_TABLE: movieCastsTable.tableName,
           REGION: 'eu-west-1',
         },
       }
@@ -122,6 +123,7 @@ export class RestAPIStack extends cdk.Stack {
         RequestItems: {
           [moviesTable.tableName]: generateBatch(movies),
           [movieCastsTable.tableName]: generateBatch(movieCasts),  // Added
+
         },
       },
       physicalResourceId: custom.PhysicalResourceId.of("moviesddbInitData"), //.of(Date.now().toString()),
@@ -138,6 +140,7 @@ export class RestAPIStack extends cdk.Stack {
         moviesTable.grantReadWriteData(newMovieFn)
         moviesTable.grantReadWriteData(newDeleteMovieFn)
         movieCastsTable.grantReadData(getMovieCastMembersFn)
+
             // other permissions ....
    
 
