@@ -1,67 +1,48 @@
-import { APIGatewayProxyHandlerV2 } from "aws-lambda";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+// lambdas/deleteMovie.ts
+import { APIGatewayProxyHandler } from "aws-lambda";
 import { DynamoDBDocumentClient, DeleteCommand } from "@aws-sdk/lib-dynamodb";
-import Ajv from "ajv";
-import schema from "../shared/types.schema.json";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
+const ddbDocClient = DynamoDBDocumentClient.from(
+  new DynamoDBClient({ region: process.env.REGION })
+);
 
-const ajv = new Ajv();
-const isValidBodyParams = ajv.compile(schema.definitions["Movie"] || {});
+export const handler: APIGatewayProxyHandler = async (event) => {
+  const movieId = event?.pathParameters?.movieId;
 
-const ddbDocClient = createDDbDocClient();
-
-export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
-  try {
-    // Print Event
-    console.log("Event: ", event);
-    const parameters = event?.pathParameters;
-    const movieId = parameters?.movieId ? parseInt(parameters.movieId) : undefined
-
-    if (!movieId) {
-        return {
-          statusCode: 404,
-          headers: {
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({ Message: "Missing movie Id" }),
-        };
-    }
-
-    const commandOutput = await ddbDocClient.send(
-        new DeleteCommand({
-            TableName: process.env.TABLE_NAME,
-            Key: { id: movieId },
-        })
-    );
+  if (!movieId) {
     return {
-      statusCode: 201,
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ message: "Movie deleted" }),
+      statusCode: 400,
+      body: JSON.stringify({ message: "Movie ID is required" }),
     };
-  } catch (error: any) {
-    console.log(JSON.stringify(error));
+  }
+
+  try {
+    const result = await ddbDocClient.send(
+      new DeleteCommand({
+        TableName: process.env.TABLE_NAME,
+        Key: {
+          id: parseInt(movieId), // Assuming movieId is a number
+        },
+      })
+    );
+
+    if (result) {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ message: "Movie deleted successfully" }),
+      };
+    } else {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ message: "Movie not found" }),
+      };
+    }
+  } catch (error) {
+    console.error(error);
     return {
       statusCode: 500,
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ error }),
+      body: JSON.stringify({ message: "Failed to delete movie", error }),
     };
   }
 };
-
-function createDDbDocClient() {
-  const ddbClient = new DynamoDBClient({ region: process.env.REGION });
-  const marshallOptions = {
-    convertEmptyValues: true,
-    removeUndefinedValues: true,
-    convertClassInstanceToMap: true,
-  };
-  const unmarshallOptions = {
-    wrapNumbers: false,
-  };
-  const translateConfig = { marshallOptions, unmarshallOptions };
-  return DynamoDBDocumentClient.from(ddbClient, translateConfig);
-}

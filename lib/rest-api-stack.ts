@@ -66,7 +66,17 @@ export class RestAPIStack extends cdk.Stack {
       },
     });
 
-    // Removed the deleteMovie function reference
+    const deleteMovieFn = new lambdanode.NodejsFunction(this, "DeleteMovieFn", {
+      architecture: lambda.Architecture.ARM_64,
+      runtime: lambda.Runtime.NODEJS_18_X,
+      entry: `${__dirname}/../lambdas/deleteMovies.ts`,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 128,
+      environment: {
+        TABLE_NAME: moviesTable.tableName,
+        REGION: "eu-west-1",
+      },
+    });
 
     const getMovieCastMembersFn = new lambdanode.NodejsFunction(
       this,
@@ -104,7 +114,7 @@ export class RestAPIStack extends cdk.Stack {
     moviesTable.grantReadData(getMovieByIdFn);
     moviesTable.grantReadData(getAllMoviesFn);
     moviesTable.grantReadWriteData(newMovieFn);
-    // Removed the permission for deleteMovie function
+    moviesTable.grantReadWriteData(deleteMovieFn); // Grant DELETE permissions
     moviesTable.grantReadData(getMovieCastMembersFn);
 
     // REST API 
@@ -131,7 +141,6 @@ export class RestAPIStack extends cdk.Stack {
       "POST",
       new apig.LambdaIntegration(newMovieFn, { proxy: true })
     );
-    // Removed the DELETE method that used the deleteMovie function
 
     const movieCastEndpoint = moviesEndpoint.addResource("cast");
     movieCastEndpoint.addMethod(
@@ -144,6 +153,12 @@ export class RestAPIStack extends cdk.Stack {
     specificMovieEndpoint.addMethod(
       "GET",
       new apig.LambdaIntegration(getMovieByIdFn, { proxy: true })
+    );
+
+    // Add DELETE method for deleting movie
+    specificMovieEndpoint.addMethod(
+      "DELETE",
+      new apig.LambdaIntegration(deleteMovieFn, { proxy: true })
     );
   }
 }
