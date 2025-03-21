@@ -76,6 +76,13 @@ export class RestAPIStack extends cdk.Stack {
         TABLE_NAME: moviesTable.tableName,
         REGION: "eu-west-1",
       },
+
+
+
+
+
+
+      
     });
     const updateMovieFn = new lambdanode.NodejsFunction(this, "UpdateMovieFn", {
       architecture: lambda.Architecture.ARM_64,
@@ -173,6 +180,7 @@ export class RestAPIStack extends cdk.Stack {
       "DELETE",
       new apig.LambdaIntegration(deleteMovieFn, { proxy: true })
     );
+    
     // Add PUT method for updating a movie
 specificMovieEndpoint.addMethod(
   "PUT",
