@@ -28,7 +28,6 @@
     "node_modules",
     "cdk.out"
   ],
-  "include": [
-    "src/**/*.ts"
-  ],
+  "include": ["**/*.ts", "**/*.tsx"]
 }
+

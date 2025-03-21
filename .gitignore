@@ -1,13 +1,28 @@
-*.js
-!jest.config.js
-*.node_modules
-*.response.json
-
 # CDK asset staging directory
 .cdk.staging
 cdk.out
 
-# Misc
-.DS_Store
-*.schema.json
+# Dependency directories
+node_modules/
+
+# TypeScript compiled files
+*.js
+*.d.ts
+!jest.config.js
+!shared/types.d.ts
+*.js.map
+
+# Logs
+logs
 *.log
+npm-debug.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE and editor folders
+.idea/
+.vscode/
+*.swp
+*.swo

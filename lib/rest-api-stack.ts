@@ -5,7 +5,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as custom from "aws-cdk-lib/custom-resources";
 import { Construct } from "constructs";
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { generateBatch } from "../shared/util";
 import { movies } from "../seed/movies";
 
@@ -56,7 +56,7 @@ export class RestAPIStack extends cdk.Stack {
 
     const newMovieFn = new lambdanode.NodejsFunction(this, "AddMovieFn", {
       architecture: lambda.Architecture.ARM_64,
-      runtime: lambda.Runtime.NODEJS_22_X,
+      runtime: lambda.Runtime.NODEJS_18_X,
       entry: `${__dirname}/../lambdas/addMovie.ts`,
       timeout: cdk.Duration.seconds(10),
       memorySize: 128,
@@ -77,13 +77,24 @@ export class RestAPIStack extends cdk.Stack {
         REGION: "eu-west-1",
       },
     });
+    const updateMovieFn = new lambdanode.NodejsFunction(this, "UpdateMovieFn", {
+      architecture: lambda.Architecture.ARM_64,
+      runtime: lambda.Runtime.NODEJS_18_X,
+      entry: `${__dirname}/../lambdas/updateMovie.ts`,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 128,
+      environment: {
+        TABLE_NAME: moviesTable.tableName,
+        REGION: "eu-west-1",
+      },
+    });
 
     const getMovieCastMembersFn = new lambdanode.NodejsFunction(
       this,
       "GetCastMemberFn",
       {
         architecture: lambda.Architecture.ARM_64,
-        runtime: lambda.Runtime.NODEJS_22_X,
+        runtime: lambda.Runtime.NODEJS_18_X,
         entry: `${__dirname}/../lambdas/getMovieCastMember.ts`,
         timeout: cdk.Duration.seconds(10),
         memorySize: 128,
@@ -116,6 +127,8 @@ export class RestAPIStack extends cdk.Stack {
     moviesTable.grantReadWriteData(newMovieFn);
     moviesTable.grantReadWriteData(deleteMovieFn); // Grant DELETE permissions
     moviesTable.grantReadData(getMovieCastMembersFn);
+    moviesTable.grantReadWriteData(updateMovieFn);
+
 
     // REST API 
     const api = new apig.RestApi(this, "RestAPI", {
@@ -160,5 +173,10 @@ export class RestAPIStack extends cdk.Stack {
       "DELETE",
       new apig.LambdaIntegration(deleteMovieFn, { proxy: true })
     );
+    // Add PUT method for updating a movie
+specificMovieEndpoint.addMethod(
+  "PUT",
+  new apig.LambdaIntegration(updateMovieFn, { proxy: true })
+);
   }
 }
