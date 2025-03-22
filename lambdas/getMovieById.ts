@@ -1,97 +1,78 @@
-import { Handler } from "aws-lambda";
 import { APIGatewayProxyHandlerV2 } from "aws-lambda";
-
-
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand, QueryCommand, QueryCommandInput } from "@aws-sdk/lib-dynamodb";
-const ddbDocClient = createDocumentClient();
+import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 
-export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {     // Note change
+const ddbDocClient = createDDbDocClient();
+
+export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
   try {
-    console.log("[EVENT]", JSON.stringify(event));
-    const pathParameters  = event?.pathParameters;
-    const movieId = pathParameters?.movieId ? parseInt(pathParameters.movieId) : undefined;
-    const hasCast = event.queryStringParameters?.cast === "true";
+    console.log("Event:", JSON.stringify(event));
+    
+    // Extract path parameters
+    const movieId = event.pathParameters?.movieId;
+    
     if (!movieId) {
       return {
-        statusCode: 404,
+        statusCode: 400,
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify({ Message: "Missing movie Id" }),
+        body: JSON.stringify({ message: "Missing required path parameter: movieId" }),
       };
     }
 
-    const commandOutput = await ddbDocClient.send(
-      new GetCommand({
-        TableName: process.env.TABLE_NAME,
-        Key: { id: movieId },
-      })
-    );
-    console.log("GetCommand response: ", commandOutput);
+    // Query DynamoDB for the movie
+    const params = {
+      TableName: process.env.TABLE_NAME,
+      Key: { id: parseInt(movieId) },
+    };
+
+    const commandOutput = await ddbDocClient.send(new GetCommand(params));
+    
     if (!commandOutput.Item) {
       return {
         statusCode: 404,
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify({ Message: "Invalid movie Id" }),
+        body: JSON.stringify({ message: "Movie not found" }),
       };
     }
-    let body = {
-      data: commandOutput.Item,
-    };
 
-    let commandInput: QueryCommandInput = {
-      TableName: process.env.MOVIE_CAST_TABLE,
-    };
-    
-    if (hasCast) {
-      commandInput = {
-        ...commandInput,
-        KeyConditionExpression: "movieId = :movieId",
-        ExpressionAttributeValues: {
-          ":movieId": movieId,
-        },
-      };
-
-      const castCommandOutput = await ddbDocClient.send(
-        new QueryCommand(commandInput)
-      );
-        
-      body.data.cast = castCommandOutput.Items;
-    }
-
-    // Return Response
     return {
       statusCode: 200,
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        message: "Successfully retrieved movie",
+        movie: commandOutput.Item,
+      }),
     };
   } catch (error: any) {
-    console.log(JSON.stringify(error));
+    console.error("Error:", error);
     return {
       statusCode: 500,
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify({ error }),
+      body: JSON.stringify({
+        message: "Failed to retrieve movie",
+        errorMsg: error.message,
+        errorStack: error.stack,
+      }),
     };
   }
 };
 
-function createDocumentClient() { 
-   const ddbClient = new DynamoDBClient({ region: process.env.REGION });
+// Create DynamoDB Document Client
+function createDDbDocClient() {
+  const ddbClient = new DynamoDBClient({ region: process.env.REGION });
   const marshallOptions = {
     convertEmptyValues: true,
     removeUndefinedValues: true,
     convertClassInstanceToMap: true,
   };
-  const unmarshallOptions = {
-    wrapNumbers: false,
-  };
-  const translateConfig = { marshallOptions, unmarshallOptions };
-  return DynamoDBDocumentClient.from(ddbClient, translateConfig);
+  const unmarshallOptions = { wrapNumbers: false };
+  return DynamoDBDocumentClient.from(ddbClient, { marshallOptions, unmarshallOptions });
 }

@@ -12,6 +12,11 @@ import { movies } from "../seed/movies";
 export class RestAPIStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+    function generateBatch(items: any[]): { PutRequest: { Item: any } }[] {
+      return items.map((item) => ({
+        PutRequest: { Item: item },
+      }));
+    }
 
     // Tables 
     const moviesTable = new dynamodb.Table(this, "MoviesTable", {
