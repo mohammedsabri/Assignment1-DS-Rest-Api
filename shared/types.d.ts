@@ -16,7 +16,7 @@ export type Movie = {
   video: boolean;        // Indicates if a video is associated
   createdAt: string;     // Timestamp
   updatedAt: string;     // Timestamp
-  // translations?: Record<string, string>; // Map of language code to translated descriptions
+  translations?: Record<string, string>; // Map of language code to translated descriptions
 };
 
 // Query parameters for fetching movies
@@ -27,7 +27,7 @@ export type MovieQueryParams = {
   minRating?: number;   // Optional filter by rating
 };
 
-// // Translation request structure
-// export type TranslationRequest = {
-//   language: string; // Target language code (e.g., 'fr', 'es', 'de')
-// };
+// Translation request structure
+export type TranslationRequest = {
+  language: string; // Target language code (e.g., 'fr', 'es', 'de')
+};
