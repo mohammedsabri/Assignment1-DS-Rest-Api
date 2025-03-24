@@ -6,42 +6,27 @@ __Demo:__ ... link to your YouTube video demonstration ......
 
 ### Context.
 
-State the context you chose for your web API and detail the attributes of the DynamoDB table items, e.g.
-
-Context: Movie Cast
+Context:This API manages movies
 
 Table item attributes:
 + MovieID - number  (Partition key)
-+ ActorID - number  (Sort Key)
-+ RoleName - string
-+ RoleDescription - string
-+ AwardsWon - List<string>
-+ etc
+
 
 ### App API endpoints.
 
-[ Provide a bullet-point list of the app's endpoints (excluding the Auth API) you have successfully implemented. ]
-e.g.
- 
-+ POST /thing - add a new 'thing'.
-+ GET /thing/{partition-key}/ - Get all the 'things' with a specified partition key.
-+ GEtT/thing/{partition-key}?attributeX=value - Get all the 'things' with a specified partition key value and its attributeX satisfying the condition .....
-+ etc
+Movies Endpoints 
+POST /movies – Add a new movie.
+GET /movies – Retrieve all movies.
+GET /movies/{id} – Retrieve details of a specific movie.
+PUT /movies/{id} – Update a movie’s details.
+DELETE /movies/{id} – Delete a movie.
 
 
 ### Features.
 
 #### Translation persistence (if completed)
 
-[ Explain briefly your solution to the translation persistence requirement - no code excerpts required. Show the structure of a table item that includes review translations, e.g.
 
-+ MovieID - number  (Partition key)
-+ ActorID - number  (Sort Key)
-+ RoleName - string
-+ RoleDescription - string
-+ AwardsWon - List<string>
-+ Translations - ?
-]
 
 #### Custom L2 Construct (if completed)
 
